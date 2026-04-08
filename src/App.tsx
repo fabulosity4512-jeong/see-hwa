@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X } from 'lucide-react';
+import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X, Info } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { generateImageFromPoem } from './lib/gemini';
 import { Modal } from './components/Modal';
@@ -261,28 +261,35 @@ export default function App() {
                 AI가 시의 감성을 분석하여 세상에 단 하나뿐인 예술 작품을 피워냅니다.
               </p>
 
-              <div className="bg-white/50 p-5 md:p-8 rounded-2xl shadow-xl border border-oriental-red/5 backdrop-blur-sm space-y-4">
+              <div className="bg-beige-bg/30 p-5 md:p-8 rounded-2xl border border-ink-black/5 backdrop-blur-sm space-y-4">
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="시의 제목을 입력하세요 (선택 사항)"
-                  className="w-full p-3 md:p-4 bg-transparent border-b border-oriental-red/10 focus:border-oriental-red focus:ring-0 text-xl md:text-2xl font-myeongjo placeholder:text-ink-black/20 outline-none"
+                  className="w-full p-3 md:p-4 bg-transparent border-b border-ink-black/5 focus:border-oriental-red focus:ring-0 text-xl md:text-2xl font-myeongjo placeholder:text-ink-black/20 outline-none"
                 />
                 <textarea
                   value={poem}
                   onChange={(e) => setPoem(e.target.value)}
                   placeholder="여기에 시 내용을 입력하세요...&#10;예: 나 보기가 역겨워 가실 때에는 말없이 고이 보내 드리오리다."
-                  className="w-full h-48 md:h-64 p-3 md:p-4 bg-transparent border-none focus:ring-0 text-lg md:text-xl font-myeongjo resize-none placeholder:text-ink-black/30 outline-none"
+                  className="w-full h-48 md:h-64 p-3 md:p-4 bg-transparent border-none focus:ring-0 text-lg md:text-xl font-myeongjo resize-none placeholder:text-ink-black/20 outline-none"
                 />
+
+                <div className="flex items-start gap-2 px-4 py-3 bg-oriental-red/5 rounded-xl text-left">
+                  <Info size={16} className="text-oriental-red shrink-0 mt-0.5" />
+                  <div className="text-xs text-ink-black/60 leading-relaxed">
+                    <span className="font-bold text-oriental-red">작성 팁:</span> 선명한 묘사(예: 붉은 노을, 시린 새벽)나 구체적인 감정 표현을 담으면 더욱 아름다운 이미지가 생성됩니다.
+                  </div>
+                </div>
                 
-                <div className="flex flex-col md:flex-row gap-4 items-center border-t border-oriental-red/5 pt-4">
+                <div className="flex flex-col md:flex-row gap-4 items-center border-t border-ink-black/5 pt-4">
                   <input
                     type="text"
                     value={author}
                     onChange={(e) => setAuthor(e.target.value)}
                     placeholder="작성자 이름"
-                    className="w-full md:flex-grow p-2 md:p-3 bg-transparent border-b border-oriental-red/10 focus:border-oriental-red focus:ring-0 text-base md:text-lg font-myeongjo placeholder:text-ink-black/20 outline-none"
+                    className="w-full md:flex-grow p-2 md:p-3 bg-transparent border-b border-ink-black/5 focus:border-oriental-red focus:ring-0 text-base md:text-lg font-myeongjo placeholder:text-ink-black/20 outline-none"
                   />
                   <label className="flex items-center gap-2 cursor-pointer select-none self-start md:self-center">
                     <input 
@@ -363,7 +370,7 @@ export default function App() {
                     drag
                     dragMomentum={false}
                     onClick={() => setActiveTab('title')}
-                    whileDrag={{ outline: '2px solid #B22222', backgroundColor: 'rgba(245, 245, 220, 0.2)' }}
+                    whileDrag={{ outline: '2px solid #D68F7B', backgroundColor: 'rgba(214, 143, 123, 0.1)' }}
                     className="absolute cursor-move p-4 select-none whitespace-nowrap rounded-lg transition-colors z-10"
                     style={{ 
                       top: '15%', 
@@ -388,7 +395,7 @@ export default function App() {
                       drag
                       dragMomentum={false}
                       onClick={() => setActiveTab('author')}
-                      whileDrag={{ outline: '2px solid #B22222', backgroundColor: 'rgba(245, 245, 220, 0.2)' }}
+                      whileDrag={{ outline: '2px solid #D68F7B', backgroundColor: 'rgba(214, 143, 123, 0.1)' }}
                       className="absolute cursor-move p-4 select-none whitespace-nowrap rounded-lg transition-colors z-10"
                       style={{ 
                         top: '25%', 
@@ -413,7 +420,7 @@ export default function App() {
                     drag
                     dragMomentum={false}
                     onClick={() => setActiveTab('poem')}
-                    whileDrag={{ outline: '2px solid #B22222', backgroundColor: 'rgba(245, 245, 220, 0.2)' }}
+                    whileDrag={{ outline: '2px solid #D68F7B', backgroundColor: 'rgba(214, 143, 123, 0.1)' }}
                     className="absolute cursor-move p-4 select-none whitespace-pre rounded-lg transition-colors z-10"
                     style={{ 
                       top: '40%', 
@@ -524,6 +531,15 @@ export default function App() {
                               className="w-full mt-2 p-3 bg-white border border-oriental-red/10 rounded-xl text-sm font-myeongjo outline-none focus:border-oriental-red transition-all"
                             />
                           )}
+
+                          {activeTab === 'poem' && (
+                            <div className="mt-3 flex items-start gap-2 px-3 py-2 bg-oriental-red/5 rounded-lg">
+                              <Info size={14} className="text-oriental-red shrink-0 mt-0.5" />
+                              <p className="text-[11px] text-ink-black/60 leading-tight">
+                                <span className="font-bold text-oriental-red">팁:</span> 시각적인 묘사나 감정적인 단어를 사용하면 AI가 더 풍부한 이미지를 그려냅니다.
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -562,25 +578,31 @@ export default function App() {
 
                       <div>
                         <span className="text-xs text-ink-black/60">정렬</span>
-                        <div className="flex gap-2 mt-2">
-                          <button 
-                            onClick={() => updateSettings('textAlign', 'left')}
-                            className={`p-3 md:p-2 border rounded-lg flex-grow flex justify-center transition-all ${currentSettings.textAlign === 'left' ? 'bg-oriental-red text-white border-oriental-red' : 'border-oriental-red/20 text-ink-black/60'}`}
-                          >
-                            <AlignLeft size={18} />
-                          </button>
-                          <button 
-                            onClick={() => updateSettings('textAlign', 'center')}
-                            className={`p-3 md:p-2 border rounded-lg flex-grow flex justify-center transition-all ${currentSettings.textAlign === 'center' ? 'bg-oriental-red text-white border-oriental-red' : 'border-oriental-red/20 text-ink-black/60'}`}
-                          >
-                            <AlignCenter size={18} />
-                          </button>
-                          <button 
-                            onClick={() => updateSettings('textAlign', 'right')}
-                            className={`p-3 md:p-2 border rounded-lg flex-grow flex justify-center transition-all ${currentSettings.textAlign === 'right' ? 'bg-oriental-red text-white border-oriental-red' : 'border-oriental-red/20 text-ink-black/60'}`}
-                          >
-                            <AlignRight size={18} />
-                          </button>
+                        <div className="flex gap-1 mt-2 p-1 bg-oriental-red/5 rounded-xl relative">
+                          {[
+                            { id: 'left', icon: <AlignLeft size={18} /> },
+                            { id: 'center', icon: <AlignCenter size={18} /> },
+                            { id: 'right', icon: <AlignRight size={18} /> }
+                          ].map((align) => (
+                            <button 
+                              key={align.id}
+                              onClick={() => updateSettings('textAlign', align.id as any)}
+                              className={`relative flex-grow flex justify-center py-2.5 md:py-2 rounded-lg transition-colors z-10 ${
+                                currentSettings.textAlign === align.id 
+                                ? 'text-white' 
+                                : 'text-ink-black/40 hover:text-ink-black/60'
+                              }`}
+                            >
+                              {align.icon}
+                              {currentSettings.textAlign === align.id && (
+                                <motion.div
+                                  layoutId="activeAlignment"
+                                  className="absolute inset-0 bg-oriental-red rounded-lg -z-10 shadow-sm"
+                                  transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
+                                />
+                              )}
+                            </button>
+                          ))}
                         </div>
                       </div>
 
@@ -622,7 +644,7 @@ export default function App() {
                       <div>
                         <span className="text-xs text-ink-black/60">색상</span>
                         <div className="flex flex-wrap gap-2 mt-2">
-                          {['#ffffff', '#000000', '#B22222', '#F5F5DC', '#FFD700', '#4B0082'].map(color => (
+                          {['#ffffff', '#000000', '#D68F7B', '#FDFDF9', '#4A433A', '#FFD700'].map(color => (
                             <button 
                               key={color}
                               onClick={() => updateSettings('textColor', color)}
