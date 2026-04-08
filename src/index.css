@@ -1,0 +1,44 @@
+@import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Sans+KR:wght@300;400;500;700&family=Nanum+Pen+Script&family=Gamja+Flower&family=Hi+Melody&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-myeongjo: "Nanum Myeongjo", serif;
+  --font-sans: "Noto Sans KR", sans-serif;
+  --font-pen: "Nanum Pen Script", cursive;
+  --font-flower: "Gamja Flower", cursive;
+  --font-melody: "Hi Melody", cursive;
+  
+  --color-beige-bg: #F5F5DC;
+  --color-oriental-red: #B22222;
+  --color-ink-black: #1A1A1A;
+}
+
+@layer base {
+  body {
+    @apply bg-beige-bg text-ink-black font-sans antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-myeongjo;
+  }
+}
+
+.myeongjo {
+  font-family: var(--font-myeongjo);
+}
+
+@media (pointer: fine) {
+  .custom-cursor {
+    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23B22222' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 19l7-7 3 3-7 7-3-3z'%3E%3C/path%3E%3Cpath d='M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z'%3E%3C/path%3E%3Cpath d='M2 2l7.586 7.586'%3E%3C/path%3E%3Ccircle cx='11' cy='11' r='2'%3E%3C/circle%3E%3C/svg%3E"), auto;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
