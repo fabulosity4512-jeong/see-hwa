@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: {uid}
+    // Fields:
+    //   - uid: string (required) - Firebase Auth UID
+    //   - username: string (required, alphanumeric) - Custom ID
+    //   - nickname: string (required) - Display name
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: sihwas
+    // Document ID: {sihwaId}
+    // Fields:
+    //   - uid: string (required) - Owner UID
+    //   - title: string (optional)
+    //   - poem: string (required)
+    //   - author: string (optional)
+    //   - imageUrl: string (required)
+    //   - style: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'username', 'nickname', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.username is string && data.username.matches("^[a-zA-Z0-9]+$") &&
+             data.nickname is string && data.nickname.size() > 0 && data.nickname.size() <= 20 &&
+             data.createdAt is timestamp;
+    }
+
+    function isValidSihwa(data) {
+      return data.keys().hasAll(['uid', 'poem', 'imageUrl', 'createdAt']) &&
+             data.uid == request.auth.uid &&
+             data.poem is string && data.poem.size() > 0 &&
+             data.imageUrl is string &&
+             data.createdAt is timestamp;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(uid) && isValidUser(request.resource.data);
+      allow update: if isOwner(uid) && isValidUser(request.resource.data) && 
+                      request.resource.data.username == resource.data.username;
+    }
+
+    match /sihwas/{sihwaId} {
+      allow read: if true; // Gallery is public
+      allow create: if isAuthenticated() && isValidSihwa(request.resource.data);
+      allow update, delete: if isDocOwner();
+    }
+  }
+}

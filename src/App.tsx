@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X, Info } from 'lucide-react';
+import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X, Info, LogIn, LogOut, User as UserIcon, History, Save } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { generateImageFromPoem } from './lib/gemini';
 import { Modal } from './components/Modal';
+import { auth, db, handleFirestoreError, OperationType } from './firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, User } from 'firebase/auth';
+import { doc, getDoc, setDoc, collection, query, where, onSnapshot, addDoc, serverTimestamp, orderBy } from 'firebase/firestore';
 
 // Types
-type AppView = 'home' | 'editor' | 'admin';
+type AppView = 'home' | 'editor' | 'admin' | 'gallery' | 'auth';
 type ImageStyle = 'watercolor' | 'oil' | 'minimal' | 'ink' | 'photo';
 type TextSettings = {
   fontSize: number;
@@ -18,6 +21,14 @@ type TextSettings = {
 
 export default function App() {
   const [view, setView] = useState<AppView>('home');
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authForm, setAuthForm] = useState({ username: '', nickname: '', password: '' });
+  const [authError, setAuthError] = useState('');
+  const [galleryItems, setGalleryItems] = useState<any[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   const [title, setTitle] = useState('');
   const [poem, setPoem] = useState('');
   const [author, setAuthor] = useState('');
@@ -73,6 +84,119 @@ export default function App() {
       metaDesc.setAttribute("content", "당신의 시를 AI 기반 이미지로 변환하여 예술적 감성을 더해주는 프리미엄 서비스 시화(Sihwa)입니다.");
     }
   }, []);
+
+  // Auth Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setUser(currentUser);
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          if (userDoc.exists()) {
+            setUserProfile(userDoc.data());
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
+      } else {
+        setUserProfile(null);
+      }
+      setIsAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Gallery Listener
+  useEffect(() => {
+    if (!user) {
+      setGalleryItems([]);
+      return;
+    }
+    const q = query(
+      collection(db, 'sihwas'),
+      where('uid', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setGalleryItems(items);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'sihwas');
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    const { username, nickname, password } = authForm;
+
+    if (authMode === 'signup') {
+      if (!/^[a-zA-Z0-9]+$/.test(username)) {
+        setAuthError('아이디는 영문과 숫자만 가능합니다.');
+        return;
+      }
+      if (!/^\d{6}$/.test(password)) {
+        setAuthError('비밀번호는 숫자 6자리여야 합니다.');
+        return;
+      }
+      if (!nickname.trim()) {
+        setAuthError('닉네임을 입력해 주세요.');
+        return;
+      }
+
+      try {
+        // Simple email-like username for Firebase Auth
+        const email = `${username}@sihwa.app`;
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const newUser = userCredential.user;
+
+        await setDoc(doc(db, 'users', newUser.uid), {
+          uid: newUser.uid,
+          username,
+          nickname,
+          createdAt: serverTimestamp(),
+        });
+        setView('home');
+      } catch (error: any) {
+        setAuthError(error.message.includes('email-already-in-use') ? '이미 존재하는 아이디입니다.' : '회원가입 중 오류가 발생했습니다.');
+      }
+    } else {
+      try {
+        const email = `${username}@sihwa.app`;
+        await signInWithEmailAndPassword(auth, email, password);
+        setView('home');
+      } catch (error: any) {
+        setAuthError('아이디 또는 비밀번호가 일치하지 않습니다.');
+      }
+    }
+  };
+
+  const handleSaveToGallery = async () => {
+    if (!user || !generatedImage) return;
+    setIsSaving(true);
+    try {
+      await addDoc(collection(db, 'sihwas'), {
+        uid: user.uid,
+        title,
+        poem,
+        author,
+        imageUrl: generatedImage,
+        style: selectedStyle,
+        createdAt: serverTimestamp(),
+      });
+      alert('갤러리에 저장되었습니다.');
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'sihwas');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    setView('home');
+  };
 
   const handleGenerate = async () => {
     if (!poem.trim()) return;
@@ -234,16 +358,199 @@ export default function App() {
         </div>
         <div className="flex gap-4 md:gap-8 items-center font-medium text-sm md:text-base">
           <button onClick={() => setView('home')} className={`hover:text-oriental-red transition-colors ${view === 'home' ? 'text-oriental-red' : ''}`}>홈</button>
-          <button className="hidden md:block hover:text-oriental-red transition-colors">갤러리</button>
-          <button onClick={() => setView('admin')} className={`hover:text-oriental-red transition-colors ${view === 'admin' ? 'text-oriental-red' : ''}`}>관리자</button>
-          <button className="bg-oriental-red text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full hover:bg-oriental-red/90 transition-all shadow-lg text-xs md:text-sm">
-            로그인
+          <button 
+            onClick={() => user ? setView('gallery') : setView('auth')} 
+            className={`hover:text-oriental-red transition-colors ${view === 'gallery' ? 'text-oriental-red' : ''}`}
+          >
+            갤러리
           </button>
+          <button onClick={() => setView('admin')} className={`hover:text-oriental-red transition-colors ${view === 'admin' ? 'text-oriental-red' : ''}`}>관리자</button>
+          {user ? (
+            <div className="flex items-center gap-3">
+              <span className="hidden sm:inline text-xs text-ink-black/60">{userProfile?.nickname || '회원'}님</span>
+              <button 
+                onClick={handleLogout}
+                className="bg-ink-black/5 text-ink-black px-4 md:px-6 py-1.5 md:py-2 rounded-full hover:bg-ink-black/10 transition-all text-xs md:text-sm flex items-center gap-2"
+              >
+                <LogOut size={14} /> 로그아웃
+              </button>
+            </div>
+          ) : (
+            <button 
+              onClick={() => setView('auth')}
+              className="bg-oriental-red text-white px-4 md:px-6 py-1.5 md:py-2 rounded-full hover:bg-oriental-red/90 transition-all shadow-lg text-xs md:text-sm flex items-center gap-2"
+            >
+              <LogIn size={14} /> 로그인
+            </button>
+          )}
         </div>
       </nav>
 
       <main className="flex-grow">
         <AnimatePresence mode="wait">
+          {view === 'auth' && (
+            <motion.section
+              key="auth"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="max-w-md mx-auto px-4 py-20"
+            >
+              <div className="bg-white/50 p-8 rounded-3xl border border-oriental-red/10 backdrop-blur-md shadow-xl">
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 bg-oriental-red/10 rounded-2xl flex items-center justify-center mx-auto mb-4 text-oriental-red">
+                    <UserIcon size={32} />
+                  </div>
+                  <h2 className="text-3xl font-myeongjo mb-2">
+                    {authMode === 'login' ? '다시 오셨군요' : '시화의 회원이 되어보세요'}
+                  </h2>
+                  <p className="text-ink-black/60">
+                    {authMode === 'login' ? '로그인하여 당신의 작품을 보관하세요' : '간단한 정보 입력으로 가입할 수 있습니다'}
+                  </p>
+                </div>
+
+                <form onSubmit={handleAuth} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-ink-black/40 mb-1 ml-1 uppercase tracking-wider">아이디 (영문+숫자)</label>
+                    <input
+                      type="text"
+                      required
+                      value={authForm.username}
+                      onChange={(e) => setAuthForm({ ...authForm, username: e.target.value })}
+                      className="w-full p-4 bg-white/50 border border-oriental-red/10 rounded-2xl focus:ring-2 focus:ring-oriental-red/20 focus:border-oriental-red outline-none transition-all"
+                      placeholder="sihwa123"
+                    />
+                  </div>
+
+                  {authMode === 'signup' && (
+                    <div>
+                      <label className="block text-xs font-bold text-ink-black/40 mb-1 ml-1 uppercase tracking-wider">닉네임</label>
+                      <input
+                        type="text"
+                        required
+                        value={authForm.nickname}
+                        onChange={(e) => setAuthForm({ ...authForm, nickname: e.target.value })}
+                        className="w-full p-4 bg-white/50 border border-oriental-red/10 rounded-2xl focus:ring-2 focus:ring-oriental-red/20 focus:border-oriental-red outline-none transition-all"
+                        placeholder="시인 김철수"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-xs font-bold text-ink-black/40 mb-1 ml-1 uppercase tracking-wider">간편 비밀번호 (숫자 6자리)</label>
+                    <input
+                      type="password"
+                      required
+                      maxLength={6}
+                      value={authForm.password}
+                      onChange={(e) => setAuthForm({ ...authForm, password: e.target.value })}
+                      className="w-full p-4 bg-white/50 border border-oriental-red/10 rounded-2xl focus:ring-2 focus:ring-oriental-red/20 focus:border-oriental-red outline-none transition-all tracking-[0.5em]"
+                      placeholder="••••••"
+                    />
+                  </div>
+
+                  {authError && (
+                    <div className="p-3 bg-red-50 text-red-500 text-sm rounded-xl flex items-center gap-2">
+                      <Info size={14} /> {authError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full py-4 bg-oriental-red text-white rounded-2xl font-bold shadow-lg hover:bg-oriental-red/90 transition-all flex items-center justify-center gap-2"
+                  >
+                    {authMode === 'login' ? <LogIn size={20} /> : <UserIcon size={20} />}
+                    {authMode === 'login' ? '로그인' : '회원가입 완료'}
+                  </button>
+                </form>
+
+                <div className="mt-6 text-center">
+                  <button
+                    onClick={() => setAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                    className="text-sm text-ink-black/60 hover:text-oriental-red transition-colors underline underline-offset-4"
+                  >
+                    {authMode === 'login' ? '아직 회원이 아니신가요? 회원가입' : '이미 계정이 있으신가요? 로그인'}
+                  </button>
+                </div>
+              </div>
+            </motion.section>
+          )}
+
+          {view === 'gallery' && (
+            <motion.section
+              key="gallery"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="max-w-6xl mx-auto px-4 py-12"
+            >
+              <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+                <div>
+                  <h2 className="text-4xl font-myeongjo mb-2">나의 시화 갤러리</h2>
+                  <p className="text-ink-black/60">지금까지 피워낸 당신의 예술 작품들입니다.</p>
+                </div>
+                <button 
+                  onClick={() => setView('home')}
+                  className="flex items-center gap-2 px-6 py-3 bg-oriental-red text-white rounded-full font-bold shadow-lg hover:bg-oriental-red/90 transition-all"
+                >
+                  <Plus size={20} /> 새로운 시화 만들기
+                </button>
+              </div>
+
+              {galleryItems.length === 0 ? (
+                <div className="text-center py-20 bg-white/30 rounded-3xl border border-dashed border-oriental-red/20">
+                  <div className="w-20 h-20 bg-oriental-red/5 rounded-full flex items-center justify-center mx-auto mb-6 text-oriental-red/40">
+                    <ImageIcon size={40} />
+                  </div>
+                  <h3 className="text-2xl font-myeongjo mb-2">아직 보관된 시화가 없습니다</h3>
+                  <p className="text-ink-black/60 mb-8">첫 번째 시화를 만들어 갤러리를 채워보세요.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {galleryItems.map((item) => (
+                    <motion.div
+                      key={item.id}
+                      layoutId={item.id}
+                      className="group bg-white rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition-all border border-oriental-red/5"
+                    >
+                      <div className="aspect-[3/4] relative overflow-hidden">
+                        <img 
+                          src={item.imageUrl} 
+                          alt={item.title} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-6">
+                          <div className="flex gap-2">
+                            <button className="flex-grow py-2 bg-white/20 backdrop-blur-md text-white rounded-lg text-sm font-bold hover:bg-white/30 transition-all">
+                              상세보기
+                            </button>
+                            <button className="p-2 bg-white/20 backdrop-blur-md text-white rounded-lg hover:bg-red-500/50 transition-all">
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="p-5">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-myeongjo text-lg truncate flex-grow">{item.title || '무제'}</h3>
+                          <span className="text-[10px] bg-oriental-red/10 text-oriental-red px-2 py-0.5 rounded-full uppercase font-bold tracking-tighter">
+                            {item.style}
+                          </span>
+                        </div>
+                        <p className="text-sm text-ink-black/60 line-clamp-2 font-myeongjo italic mb-4">
+                          "{item.poem}"
+                        </p>
+                        <div className="flex justify-between items-center text-[10px] text-ink-black/40">
+                          <span>{item.author || '익명'}</span>
+                          <span>{item.createdAt?.toDate().toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </motion.section>
+          )}
           {view === 'home' && (
             <motion.section 
               key="home"
@@ -679,6 +986,18 @@ export default function App() {
 
                     {/* Actions - Mobile: Actions tool only */}
                     <div className={`${activeMobileTool === 'actions' ? 'block' : 'hidden lg:block'} pt-8 border-t border-oriental-red/10 flex flex-col gap-4`}>
+                      <button 
+                        onClick={handleSaveToGallery}
+                        disabled={isSaving || !user}
+                        className="w-full py-4 bg-ink-black text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:opacity-90 transition-all shadow-lg disabled:opacity-50"
+                      >
+                        {isSaving ? (
+                          <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                            <Save size={20} />
+                          </motion.div>
+                        ) : <Save size={20} />}
+                        {user ? '갤러리에 저장' : '로그인 후 저장 가능'}
+                      </button>
                       <button 
                         onClick={handleDownload}
                         className="w-full py-4 bg-oriental-red text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-oriental-red/90 transition-all shadow-lg"

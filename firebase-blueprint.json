@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "App user profile with custom credentials",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "username": { "type": "string", "description": "Custom ID (alphanumeric)" },
+        "nickname": { "type": "string", "description": "Display name" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "username", "nickname", "createdAt"]
+    },
+    "Sihwa": {
+      "title": "Sihwa",
+      "description": "A generated poem-art piece",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Owner UID" },
+        "title": { "type": "string" },
+        "poem": { "type": "string" },
+        "author": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "style": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "poem", "imageUrl", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{uid}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/sihwas/{sihwaId}": {
+      "schema": "Sihwa",
+      "description": "Public or private gallery items"
+    }
+  }
+}

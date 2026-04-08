@@ -8,8 +8,6 @@ export async function generateImageFromPoem(poem: string, style: string = "water
   try {
     const model = "gemini-2.5-flash-image";
     
-    // First, we might want to enhance the prompt using a text model to get a better visual description
-    // but for simplicity and directness, we'll combine the poem and style into a prompt.
     const prompt = `Create a high-quality, artistic image based on this Korean poem. 
     Style: ${style}. 
     Mood: Emotional, oriental, elegant. 
@@ -27,7 +25,12 @@ export async function generateImageFromPoem(poem: string, style: string = "water
     });
 
     // Find the image part in the response
-    for (const part of response.candidates?.[0]?.content?.parts || []) {
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (!parts) {
+      throw new Error("No parts found in response");
+    }
+
+    for (const part of parts) {
       if (part.inlineData) {
         return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
       }
