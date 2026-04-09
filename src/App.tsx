@@ -34,6 +34,7 @@ export default function App() {
   const [author, setAuthor] = useState('');
   const [showAuthor, setShowAuthor] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('시의 감성을 분석하고 있습니다...');
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareImage, setShareImage] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
@@ -220,6 +221,21 @@ export default function App() {
   const handleGenerate = async () => {
     if (!poem.trim()) return;
     setIsGenerating(true);
+    
+    const messages = [
+      '시의 감성을 분석하고 있습니다...',
+      '아름다운 색채를 고르는 중입니다...',
+      '캔버스에 그림을 피워내고 있습니다...',
+      '예술적인 터치를 더하는 중입니다...',
+      '거의 다 되었습니다. 잠시만 기다려 주세요.'
+    ];
+    
+    let messageIndex = 0;
+    const interval = setInterval(() => {
+      messageIndex = (messageIndex + 1) % messages.length;
+      setLoadingMessage(messages[messageIndex]);
+    }, 3000);
+
     try {
       const fullPrompt = `${title ? `Title: ${title}\n` : ''}Poem: ${poem}${author ? `\nAuthor: ${author}` : ''}`;
       const imageUrl = await generateImageFromPoem(fullPrompt, selectedStyle);
@@ -229,7 +245,9 @@ export default function App() {
       console.error(error);
       alert('이미지 생성 중 오류가 발생했습니다. 다시 시도해 주세요.');
     } finally {
+      clearInterval(interval);
       setIsGenerating(false);
+      setLoadingMessage('시의 감성을 분석하고 있습니다...');
     }
   };
 
@@ -404,6 +422,82 @@ export default function App() {
           )}
         </div>
       </nav>
+
+      <AnimatePresence>
+        {isGenerating && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-beige-bg/90 backdrop-blur-md"
+          >
+            <div className="relative w-32 h-32 mb-8">
+              <motion.div 
+                animate={{ 
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 180, 360],
+                  borderRadius: ["20%", "50%", "20%"]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+                className="absolute inset-0 border-4 border-oriental-red/30"
+              />
+              <motion.div 
+                animate={{ 
+                  scale: [1.2, 1, 1.2],
+                  rotate: [360, 180, 0],
+                  borderRadius: ["50%", "20%", "50%"]
+                }}
+                transition={{ 
+                  duration: 4, 
+                  repeat: Infinity, 
+                  ease: "easeInOut" 
+                }}
+                className="absolute inset-4 border-4 border-oriental-red/60"
+              />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.div
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Sparkles size={48} className="text-oriental-red" />
+                </motion.div>
+              </div>
+            </div>
+            
+            <motion.p 
+              key={loadingMessage}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="text-xl md:text-2xl font-myeongjo text-ink-black/80 text-center px-6"
+            >
+              {loadingMessage}
+            </motion.p>
+            
+            <div className="mt-12 flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <motion.div
+                  key={i}
+                  animate={{ 
+                    scale: [1, 1.5, 1],
+                    opacity: [0.3, 1, 0.3]
+                  }}
+                  transition={{ 
+                    duration: 1, 
+                    repeat: Infinity, 
+                    delay: i * 0.2 
+                  }}
+                  className="w-2 h-2 bg-oriental-red rounded-full"
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-grow">
         <AnimatePresence mode="wait">

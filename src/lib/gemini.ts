@@ -6,8 +6,8 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function generateImageFromPoem(poem: string, style: string = "watercolor") {
   try {
-    // Generate the image using the poem and style directly with Gemini Flash
-    const imageModel = "gemini-flash-latest";
+    // Generate the image using the poem and style directly with Gemini 1.5 Flash
+    const imageModel = "gemini-1.5-flash";
     const prompt = `Create a high-quality, artistic image based on this Korean poem. 
     Style: ${style}. 
     Mood: Emotional, oriental, elegant. 
