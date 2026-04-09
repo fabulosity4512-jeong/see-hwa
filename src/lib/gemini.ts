@@ -17,11 +17,6 @@ export async function generateImageFromPoem(poem: string, style: string = "water
     const response = await genAI.models.generateContent({
       model: imageModel,
       contents: [{ parts: [{ text: prompt }] }],
-      config: {
-        imageConfig: {
-          aspectRatio: "9:16",
-        }
-      }
     });
 
     // Find the image part in the response
