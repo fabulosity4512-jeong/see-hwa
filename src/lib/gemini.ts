@@ -6,26 +6,37 @@ const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 
 export async function generateImageFromPoem(poem: string, style: string = "watercolor") {
   try {
-    // Generate the image using the poem and style directly with Imagen 3
-    const imageModel = "imagen-3";
-    const directPrompt = `Create a high-quality, artistic image based on this Korean poem. Style: ${style}. Mood: Emotional, oriental, elegant. IMPORTANT: Do NOT include any text, letters, or characters in the image itself. The image should be purely visual. Poem content: ${poem}`;
+    // Generate the image using the poem and style directly with Gemini Flash
+    const imageModel = "gemini-flash-latest";
+    const prompt = `Create a high-quality, artistic image based on this Korean poem. 
+    Style: ${style}. 
+    Mood: Emotional, oriental, elegant. 
+    IMPORTANT: Do NOT include any text, letters, or characters in the image itself. The image should be purely visual.
+    Poem content: ${poem}`;
     
-    const response = await genAI.models.generateImages({
+    const response = await genAI.models.generateContent({
       model: imageModel,
-      prompt: directPrompt,
+      contents: [{ parts: [{ text: prompt }] }],
       config: {
-        numberOfImages: 1,
-        aspectRatio: "9:16",
+        imageConfig: {
+          aspectRatio: "9:16",
+        }
       }
     });
 
-    // Extract the image from the response
-    const generatedImage = response.generatedImages?.[0];
-    if (!generatedImage || !generatedImage.image?.imageBytes) {
-      throw new Error("No image generated from Imagen 3");
+    // Find the image part in the response
+    const parts = response.candidates?.[0]?.content?.parts;
+    if (!parts) {
+      throw new Error("No parts found in response");
     }
 
-    return `data:image/png;base64,${generatedImage.image.imageBytes}`;
+    for (const part of parts) {
+      if (part.inlineData) {
+        return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+    }
+    
+    throw new Error("No image data found in response");
   } catch (error) {
     console.error("Error generating image:", error);
     throw error;
