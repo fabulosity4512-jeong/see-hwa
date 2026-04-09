@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X, Info, LogIn, LogOut, User as UserIcon, History, Save } from 'lucide-react';
+import { Sparkles, Download, Share2, Palette, Type as TypeIcon, Layout, Settings, Trash2, BarChart3, Image as ImageIcon, ChevronRight, Minus, Plus, AlignLeft, AlignCenter, AlignRight, X, Info, LogIn, LogOut, User as UserIcon, History, Save, Upload } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import { generateImageFromPoem } from './lib/gemini';
 import { Modal } from './components/Modal';
@@ -37,6 +37,7 @@ export default function App() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareImage, setShareImage] = useState<string | null>(null);
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<ImageStyle>('watercolor');
   const [imageOpacity, setImageOpacity] = useState(100);
   
@@ -196,6 +197,24 @@ export default function App() {
   const handleLogout = async () => {
     await signOut(auth);
     setView('home');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const result = event.target?.result as string;
+        setGeneratedImage(result);
+        setUploadedImage(result);
+        setView('editor');
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleGenerate = async () => {
@@ -629,23 +648,38 @@ export default function App() {
                   ))}
                 </div>
 
-                <button
-                  onClick={handleGenerate}
-                  disabled={isGenerating || !poem.trim()}
-                  className="w-full md:w-auto mt-8 md:mt-10 group relative inline-flex items-center justify-center px-10 md:px-12 py-3 md:py-4 font-myeongjo text-lg md:text-xl font-bold text-white transition-all duration-200 bg-oriental-red rounded-full hover:bg-oriental-red/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oriental-red disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
-                >
-                  <span className="relative flex items-center gap-2">
-                    {isGenerating ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                      >
-                        <Sparkles size={24} />
-                      </motion.div>
-                    ) : <Sparkles size={24} />}
-                    {isGenerating ? '피어나는 중...' : '이미지로 피어내기'}
-                  </span>
-                </button>
+                <div className="flex flex-col md:flex-row gap-4 justify-center mt-8 md:mt-10">
+                  <button
+                    onClick={handleGenerate}
+                    disabled={isGenerating || !poem.trim()}
+                    className="flex-grow md:flex-grow-0 group relative inline-flex items-center justify-center px-10 md:px-12 py-3 md:py-4 font-myeongjo text-lg md:text-xl font-bold text-white transition-all duration-200 bg-oriental-red rounded-full hover:bg-oriental-red/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oriental-red disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden shadow-lg"
+                  >
+                    <span className="relative flex items-center gap-2">
+                      {isGenerating ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                        >
+                          <Sparkles size={24} />
+                        </motion.div>
+                      ) : <Sparkles size={24} />}
+                      {isGenerating ? '피어나는 중...' : 'AI 이미지로 피어내기'}
+                    </span>
+                  </button>
+
+                  <label className="flex-grow md:flex-grow-0 cursor-pointer group relative inline-flex items-center justify-center px-10 md:px-12 py-3 md:py-4 font-myeongjo text-lg md:text-xl font-bold text-oriental-red transition-all duration-200 bg-white border-2 border-oriental-red rounded-full hover:bg-oriental-red/5 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-oriental-red overflow-hidden shadow-lg">
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleImageUpload}
+                    />
+                    <span className="relative flex items-center gap-2">
+                      <Upload size={24} />
+                      내 이미지 업로드
+                    </span>
+                  </label>
+                </div>
               </div>
             </motion.section>
           )}
@@ -968,19 +1002,46 @@ export default function App() {
                       <label className="block text-sm font-bold mb-4 flex items-center gap-2">
                         <ImageIcon size={16} /> 배경 이미지 설정
                       </label>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-xs text-ink-black/60">
-                          <span>불투명도</span>
-                          <span>{imageOpacity}%</span>
+                      
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-xs text-ink-black/60">
+                            <span>불투명도</span>
+                            <span>{imageOpacity}%</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max="100" 
+                            value={imageOpacity} 
+                            onChange={(e) => setImageOpacity(parseInt(e.target.value))}
+                            className="w-full accent-oriental-red"
+                          />
                         </div>
-                        <input 
-                          type="range" 
-                          min="0" 
-                          max="100" 
-                          value={imageOpacity} 
-                          onChange={(e) => setImageOpacity(parseInt(e.target.value))}
-                          className="w-full accent-oriental-red"
-                        />
+
+                        <div className="grid grid-cols-1 gap-2">
+                          <label className="cursor-pointer flex items-center justify-center gap-2 py-3 border border-oriental-red/20 rounded-xl text-sm font-medium hover:bg-oriental-red/5 transition-all">
+                            <input 
+                              type="file" 
+                              accept="image/*" 
+                              className="hidden" 
+                              onChange={handleImageUpload}
+                            />
+                            <Upload size={16} /> 이미지 교체
+                          </label>
+                          <button 
+                            onClick={handleGenerate}
+                            disabled={isGenerating}
+                            className="flex items-center justify-center gap-2 py-3 border border-oriental-red/20 rounded-xl text-sm font-medium hover:bg-oriental-red/5 transition-all disabled:opacity-50"
+                          >
+                            {isGenerating ? (
+                              <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }}>
+                                <Sparkles size={16} />
+                              </motion.div>
+                            ) : <Sparkles size={16} />}
+                            AI로 다시 생성
+                          </button>
+                        </div>
                       </div>
                     </div>
 
