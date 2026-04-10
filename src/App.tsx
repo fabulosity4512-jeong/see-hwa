@@ -699,7 +699,8 @@ export default function App() {
                 <div className="flex items-start gap-2 px-4 py-3 bg-oriental-red/5 rounded-xl text-left">
                   <Info size={16} className="text-oriental-red shrink-0 mt-0.5" />
                   <div className="text-xs text-ink-black/60 leading-relaxed">
-                    <span className="font-bold text-oriental-red">작성 팁:</span> 선명한 묘사(예: 붉은 노을, 시린 새벽)나 구체적인 감정 표현을 담으면 더욱 아름다운 이미지가 생성됩니다.
+                    <span className="font-bold text-oriental-red">작성 팁:</span> 선명한 묘사(예: 붉은 노을, 시린 새벽)나 구체적인 감정 표현을 담으면 더욱 아름다운 이미지가 생성됩니다. <br />
+                    <span className="font-bold text-oriental-red">안내:</span> 이미지 생성 후 에디터에서 텍스트 수정이 가능합니다.
                   </div>
                 </div>
                 
@@ -774,6 +775,84 @@ export default function App() {
                     </span>
                   </label>
                 </div>
+              </div>
+
+              {/* Information Sections */}
+              <div className="mt-24 md:mt-32 space-y-20 md:space-y-32 text-left">
+                {/* Service Introduction */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="grid md:grid-cols-2 gap-12 items-center"
+                >
+                  <div>
+                    <h2 className="text-3xl md:text-4xl font-myeongjo mb-6 border-l-4 border-oriental-red pl-4">시화 서비스 소개</h2>
+                    <p className="text-ink-black/70 leading-relaxed text-lg">
+                      '시화'는 당신의 문학적 감수성을 시각적 예술로 승화시키는 AI 기반 창작 플랫폼입니다. 
+                      단순한 텍스트를 넘어, 시가 가진 고유의 분위기와 은유를 AI가 깊이 있게 해석하여 
+                      세상에 단 하나뿐인 배경 이미지를 생성해 드립니다. 
+                      전통적인 수묵화부터 현대적인 실사 스타일까지, 당신의 시에 가장 어울리는 옷을 입혀보세요.
+                    </p>
+                  </div>
+                  <div className="bg-oriental-red/5 rounded-3xl p-8 flex items-center justify-center">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="w-full aspect-[3/4] bg-white rounded-xl shadow-md rotate-[-5deg] flex items-center justify-center p-4">
+                        <div className="w-full h-full border border-ink-black/5 bg-oriental-red/5 rounded-lg"></div>
+                      </div>
+                      <div className="w-full aspect-[3/4] bg-white rounded-xl shadow-md rotate-[5deg] flex items-center justify-center p-4">
+                        <div className="w-full h-full border border-ink-black/5 bg-oriental-red/5 rounded-lg"></div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* How to Use */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                >
+                  <h2 className="text-3xl md:text-4xl font-myeongjo mb-12 text-center">이용 방법</h2>
+                  <div className="grid md:grid-cols-4 gap-8">
+                    {[
+                      { step: '01', title: '시 입력', desc: '제목과 시 내용, 작성자 이름을 입력합니다.' },
+                      { step: '02', title: '스타일 선택', desc: '수채화, 수묵화 등 원하는 화풍을 선택합니다.' },
+                      { step: '03', title: '이미지 생성', desc: 'AI가 시의 내용을 분석해 이미지를 그려냅니다.' },
+                      { step: '04', title: '편집 및 저장', desc: '텍스트 위치와 크기를 조절한 뒤 저장하세요.' },
+                    ].map((item, idx) => (
+                      <div key={idx} className="relative p-6 bg-white rounded-2xl shadow-sm border border-ink-black/5 hover:shadow-md transition-shadow">
+                        <span className="absolute -top-4 left-6 text-4xl font-bold text-oriental-red/20">{item.step}</span>
+                        <h3 className="text-xl font-bold mb-3 mt-2">{item.title}</h3>
+                        <p className="text-sm text-ink-black/60 leading-relaxed">{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </motion.div>
+
+                {/* AI Principles */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  className="bg-ink-black text-white rounded-[3rem] p-8 md:p-16 overflow-hidden relative"
+                >
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-oriental-red/20 blur-[100px] rounded-full"></div>
+                  <div className="relative z-10">
+                    <h2 className="text-3xl md:text-4xl font-myeongjo mb-8">AI 이미지 생성 원리</h2>
+                    <div className="space-y-6 text-white/70 text-lg leading-relaxed max-w-3xl">
+                      <p>
+                        우리의 AI는 구글의 최신 생성형 모델인 <span className="text-oriental-red font-bold">Gemini 2.5 Flash Image</span>를 기반으로 작동합니다. 
+                        사용자가 입력한 시의 텍스트에서 주요 키워드와 감정적 맥락을 추출하고, 이를 시각적 프롬프트로 변환합니다.
+                      </p>
+                      <p>
+                        단순히 단어를 나열하는 것이 아니라, 시의 '여백의 미'와 '은유'를 이해하려 노력합니다. 
+                        예를 들어 "시린 새벽"이라는 표현에서 차가운 푸른 빛의 조명과 정적인 구도를 설계하여 
+                        시의 분위기를 가장 잘 대변할 수 있는 예술적 배경을 실시간으로 렌더링합니다.
+                      </p>
+                    </div>
+                  </div>
+                </motion.div>
               </div>
             </motion.section>
           )}
